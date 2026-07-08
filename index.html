@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0f1115" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Gym Tracker" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<title>Gym Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>🏋️ Gym Tracker</h1>
+  <span class="small">Heute: <span id="todayLabel"></span></span>
+</div>
+
+<div class="grid">
+
+  <!-- Zyklus -->
+  <div class="card col-4">
+    <h2>Zyklus</h2>
+    <div class="row" style="gap:10px; align-items:center;">
+      <div class="toggle" id="cycleToggle">
+        <button data-cycle="bulk" class="bulk">Aufbau</button>
+        <button data-cycle="cut"  class="cut">Diät</button>
+      </div>
+      <div id="cyclePill"></div>
+    </div>
+    <div class="row stretch" style="margin-top:14px;">
+      <input id="cycleStart" type="date" style="flex:1;" />
+      <button class="secondary" onclick="saveCycleStart()">OK</button>
+    </div>
+    <div class="macros" style="grid-template-columns: repeat(3,1fr); margin-top:14px;">
+      <div class="macro"><div class="v" id="cycleWeek">–</div><div class="l">Woche</div></div>
+      <div class="macro"><div class="v" id="cycleDay">–</div><div class="l">Tag</div></div>
+      <div class="macro"><div class="v" id="cycleDelta" style="font-size:18px;">–</div><div class="l">Δ seit Start</div></div>
+    </div>
+    <button class="secondary" style="margin-top:12px; width:100%;" onclick="finishCycle()">Zyklus abschließen</button>
+  </div>
+
+  <!-- Cardio/Schritte fix -->
+  <div class="card col-4">
+    <h2>Cardio & Schritte Bedarf</h2>
+    <div class="row stretch">
+      <input id="stepsGoal" type="number" placeholder="Schritte/Tag" />
+    </div>
+    <div class="row stretch" style="margin-top:8px;">
+      <input id="cardioGoal" type="number" placeholder="Cardio (min)" />
+    </div>
+    <div class="row stretch" style="margin-top:8px;">
+      <input id="cardioFreq" placeholder="Häufigkeit (z.B. 3x pro Woche)" />
+    </div>
+    <button class="secondary" style="margin-top:12px; width:100%;" onclick="saveGoals()">Speichern</button>
+    <div class="macros" style="grid-template-columns: repeat(3,1fr); margin-top:10px;">
+      <div class="macro"><div class="v" id="stepsLbl" style="font-size:18px;">–</div><div class="l">Schritte</div></div>
+      <div class="macro"><div class="v" id="cardioLbl" style="font-size:18px;">–</div><div class="l">Min</div></div>
+      <div class="macro"><div class="v" id="freqLbl" style="font-size:14px;">–</div><div class="l">Frequenz</div></div>
+    </div>
+  </div>
+
+  <!-- Wochendurchschnitt -->
+  <div class="card col-4">
+    <h2>Wochendurchschnitt</h2>
+    <div class="macros" style="grid-template-columns: 1fr 1fr;">
+      <div class="macro"><div class="v" id="weekAvg">–</div><div class="l">Woche Ø (kg)</div></div>
+      <div class="macro"><div class="v" id="weekDelta" style="font-size:22px;">–</div><div class="l">Δ Vorwoche</div></div>
+    </div>
+    <div class="row stretch" style="margin-top:14px;">
+      <input id="weightDate" type="date" />
+      <input id="weightInput" type="number" step="0.1" placeholder="kg" style="max-width:90px;"/>
+      <button onclick="saveWeight()">+</button>
+    </div>
+    <div class="small" style="margin-top:6px;">Tagesgewicht eintragen</div>
+  </div>
+
+  <!-- Gewichts-Chart -->
+  <div class="card col-12">
+    <h2>Gewichtsverlauf</h2>
+    <canvas id="weightChart" height="100"></canvas>
+  </div>
+
+  <!-- Tägliche Gewichts-Einträge -->
+  <div class="card col-6">
+    <h2>Tägliches Gewicht</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Datum</th><th>kg</th><th>Δ Vortag</th><th></th></tr></thead>
+        <tbody id="weightTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Wochenübersicht -->
+  <div class="card col-6">
+    <h2>Wochenübersicht (Mo–So)</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Woche</th><th>Ø kg</th><th>Δ Vorwoche</th><th>Tage</th></tr></thead>
+        <tbody id="weekTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Vergangene Zyklen -->
+  <div class="card col-12">
+    <h2>Vergangene Zyklen</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Typ</th><th>Zeitraum</th><th>Dauer</th><th>Start kg</th><th>End kg</th><th>Δ</th><th></th></tr></thead>
+        <tbody id="cycleHistoryTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Ernährungsplan: 5 Mahlzeiten -->
+  <div class="card col-8">
+    <h2>Ernährungsplan</h2>
+    <div class="small" style="margin-bottom:10px;">Schreibe pro Mahlzeit die Lebensmittel mit Menge, eines pro Zeile oder mit Komma getrennt (z.B. „150g Haferflocken, 250ml Milch, 1 Banane"). Wird automatisch lokal berechnet.</div>
+    <div id="mealsContainer"></div>
+  </div>
+
+  <!-- Gesamt-Makros -->
+  <div class="card col-4">
+    <h2>Gesamt-Nährwerte</h2>
+    <div class="macros" style="grid-template-columns: 1fr 1fr;">
+      <div class="macro"><div class="v" id="sumKcal">0</div><div class="l">kcal</div></div>
+      <div class="macro"><div class="v" id="sumP">0</div><div class="l">Protein g</div></div>
+      <div class="macro"><div class="v" id="sumC">0</div><div class="l">KH g</div></div>
+      <div class="macro"><div class="v" id="sumF">0</div><div class="l">Fett g</div></div>
+    </div>
+    <div style="margin-top:18px;">
+      <h2 style="margin-bottom:8px;">Ziele</h2>
+      <div class="row stretch"><input id="goalKcal" type="number" placeholder="kcal/Tag"/></div>
+      <div class="row stretch" style="margin-top:6px;"><input id="goalP" type="number" placeholder="Protein g"/></div>
+      <div class="row stretch" style="margin-top:6px;"><input id="goalC" type="number" placeholder="KH g"/></div>
+      <div class="row stretch" style="margin-top:6px;"><input id="goalF" type="number" placeholder="Fett g"/></div>
+      <button class="secondary" style="margin-top:8px;" onclick="saveMacroGoals()">Speichern</button>
+      <div style="margin-top:10px;">
+        <div class="small">kcal: <span id="kcalRatio">0</span></div>
+        <div class="target-bar"><div id="kcalBar" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lebensmittel-DB -->
+  <div class="card col-12">
+    <details>
+      <summary>📖 Lebensmittel-Datenbank (eigene Einträge hinzufügen)</summary>
+      <div class="small" style="margin-top:10px;">Alle Werte pro 100g bzw. pro Stück. Wird zur Berechnung deiner Mahlzeiten verwendet.</div>
+      <div class="row stretch" style="margin-top:10px;">
+        <input id="fName" placeholder="Name (z.B. Magerquark)"/>
+        <select id="fUnit"><option value="100g">pro 100g</option><option value="piece">pro Stück</option></select>
+        <input id="fKcal" type="number" placeholder="kcal"/>
+        <input id="fP" type="number" placeholder="Protein g"/>
+        <input id="fC" type="number" placeholder="KH g"/>
+        <input id="fF" type="number" placeholder="Fett g"/>
+        <button onclick="addFood()">+ Eintragen</button>
+      </div>
+      <div class="scroll" style="margin-top:10px;">
+        <table>
+          <thead><tr><th>Name</th><th>Einheit</th><th>kcal</th><th>P</th><th>KH</th><th>F</th><th></th></tr></thead>
+          <tbody id="foodTable"></tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+
+  <!-- Settings -->
+  <div class="card col-12">
+    <details>
+      <summary>⚙️ Einstellungen</summary>
+      <div class="settings-row" style="margin-top:8px;">
+        <button class="danger" onclick="resetAll()">Alle Daten löschen</button>
+      </div>
+    </details>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
