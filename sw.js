@@ -1,5 +1,5 @@
 // Bump this on every deploy that changes any cached asset — forces old caches to be dropped.
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `gym-tracker-${CACHE_VERSION}`;
 
 // App shell only. User data lives in localStorage, never in the cache.
